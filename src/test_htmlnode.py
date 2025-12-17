@@ -1,6 +1,6 @@
 import unittest
 
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -73,12 +73,17 @@ class TestLeafNode(unittest.TestCase):
     
     def test_init_with_children_keyword(self):
         with self.assertRaises(TypeError):
+            node = LeafNode(tag="p", value="Some text", children=None)
+
             node = LeafNode(tag="p", value="Some text", children=[])
         
         with self.assertRaises(TypeError):
             node = LeafNode(tag="p", value="Some text", children=["child1", "child2"])   
     
     def test_init_with_children_positional(self):
+        with self.assertRaises(TypeError):
+            node = LeafNode("p", "Some text", None, {"prop": "value"})
+
         with self.assertRaises(TypeError):
             node = LeafNode("p", "Some text", [], {"prop": "value"})
         
@@ -99,6 +104,56 @@ class TestLeafNode(unittest.TestCase):
         node = LeafNode(tag=None, value="Raw text")
         expected_html = 'Raw text'
         self.assertEqual(node.to_html(), expected_html)
+
+class TestParentNode(unittest.TestCase):
+    def test_init_missing_tag(self):
+        with self.assertRaises(TypeError):
+            node = ParentNode(children=["child"])
+    
+    def test_init_tag_empty(self):
+        with self.assertRaises(ValueError):
+            node = ParentNode(tag=None, children=["child"])
+        
+        # with self.assertRaises(ValueError):
+        #     node = ParentNode(tag="", children=["child"]) # not sure if empty string should be accepted
+    
+    def test_init_missing_children(self):
+        with self.assertRaises(TypeError):
+            node = ParentNode(tag="div")
+    
+    def test_init_with_value_keyword(self):
+        with self.assertRaises(TypeError):
+            node = ParentNode(tag="div", children=[], value="Some value")
+        
+        with self.assertRaises(TypeError):
+            node = ParentNode(tag="div", children=[], value=None)
+    
+    def test_init_with_value_positional(self):
+        with self.assertRaises(TypeError):
+            node = ParentNode("div", [], "Some value", {"prop": "value"})
+        
+        with self.assertRaises(TypeError):
+            node = ParentNode("div", [], None, {"prop": "value"})
+    
+    def test_to_html_single_child(self):
+        child = LeafNode(tag="p", value="Child 1")
+        parent = ParentNode(tag="div", children=[child])
+        expected_html = '<div><p>Child 1</p></div>'
+        self.assertEqual(parent.to_html(), expected_html)
+
+    def test_to_html_multiple_children(self):
+        child1 = LeafNode(tag="p", value="Child 1")
+        child2 = LeafNode(tag="p", value="Child 2", props={"class": "second"})
+        parent = ParentNode(tag="div", children=[child1, child2], props={"id": "parent"})
+        expected_html = '<div id="parent"><p>Child 1</p><p class="second">Child 2</p></div>'
+        self.assertEqual(parent.to_html(), expected_html)
+
+    def test_to_html_nested_parents(self):
+        child1 = LeafNode(tag="span", value="Inner Child")
+        inner_parent = ParentNode(tag="div", children=[child1])
+        outer_parent = ParentNode(tag="section", children=[inner_parent], props={"class": "outer"})
+        expected_html = '<section class="outer"><div><span>Inner Child</span></div></section>'
+        self.assertEqual(outer_parent.to_html(), expected_html)
 
 
 if __name__ == "__main__":
