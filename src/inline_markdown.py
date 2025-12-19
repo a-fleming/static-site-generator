@@ -1,6 +1,33 @@
 import re
 
+from htmlnode import LeafNode
 from textnode import TextNode, TextType
+
+def text_node_to_html_node(text_node: TextNode) -> LeafNode:
+    if not isinstance(text_node, TextNode):
+        raise TypeError("text_node must be a TextNode object")
+
+    match text_node.text_type:
+        case TextType.PLAIN:
+            return LeafNode(tag=None, value=text_node.text)
+
+        case TextType.BOLD:
+            return LeafNode(tag="b", value=text_node.text)
+
+        case TextType.ITALIC:
+            return LeafNode(tag="i", value=text_node.text)
+
+        case TextType.CODE:
+            return LeafNode(tag="code", value=text_node.text)
+
+        case TextType.LINK:
+            return LeafNode(tag="a", value=text_node.text, props={"href": text_node.url})
+
+        case TextType.IMAGE:
+            return LeafNode(tag="img", value="", props={"src": text_node.url, "alt": text_node.text})
+        
+        case _:
+            raise TypeError("TextNode must have a valid TextType")
 
 def split_nodes_delimiter(old_nodes: list, delimiter: str, text_type: TextType) -> list:
     new_nodes = []
@@ -35,13 +62,17 @@ def extract_markdown_images(text: str) -> list:
     # URL of the markdown images.
     # pattern matches ![alt text](https://www.example.com/path/to/1/image.png)
     pattern = r"!\[(.*?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    #  ptrn = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
+    # TODO: can probably improve the pattern
     return re.findall(pattern, text)
 
 def extract_markdown_links(text: str) -> list:
     # Takes raw markdown text and returns a list of tuples. Each tuple contains the anchor text (required) and the
     # URL of the link.
     # pattern matches [anchor text](https://www.example.com/path/to/1/page.html)
-    pattern = r"(?<!\!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    pattern = r"(?<!!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    #  ptrn = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
+    # TODO: can probably improve the pattern
     return re.findall(pattern, text)
     
 
