@@ -1,3 +1,5 @@
+import re
+
 from textnode import TextNode, TextType
 
 def split_nodes_delimiter(old_nodes: list, delimiter: str, text_type: TextType) -> list:
@@ -27,6 +29,21 @@ def split_nodes_delimiter(old_nodes: list, delimiter: str, text_type: TextType) 
                 delimited_node = TextNode(text, text_type)
                 new_nodes.append(delimited_node)
     return new_nodes
+
+def extract_markdown_images(text: str) -> list:
+    # Takes raw markdown text and returns a list of tuples. Each tuple contains the alt text (if any) and the
+    # URL of the markdown images.
+    # pattern matches ![alt text](https://www.example.com/path/to/1/image.png)
+    pattern = r"!\[(.*?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    return re.findall(pattern, text)
+
+def extract_markdown_links(text: str) -> list:
+    # Takes raw markdown text and returns a list of tuples. Each tuple contains the anchor text (required) and the
+    # URL of the link.
+    # pattern matches [anchor text](https://www.example.com/path/to/1/page.html)
+    pattern = r"(?<!\!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    return re.findall(pattern, text)
+    
 
 def main():
     plain_node = TextNode("This is text with two `code block` words. `more code stuff`", TextType.PLAIN)
