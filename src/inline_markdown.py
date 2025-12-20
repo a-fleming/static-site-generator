@@ -57,6 +57,77 @@ def split_nodes_delimiter(old_nodes: list, delimiter: str, text_type: TextType) 
                 new_nodes.append(delimited_node)
     return new_nodes
 
+def split_nodes_bold(old_nodes: list) -> list:
+    return split_nodes_of_type(old_nodes, TextType.BOLD)
+
+def split_nodes_italic(old_nodes: list) -> list:
+    return split_nodes_of_type(old_nodes, TextType.ITALIC)
+
+def split_nodes_code(old_nodes: list) -> list:
+    return split_nodes_of_type(old_nodes, TextType.CODE)
+
+def split_nodes_image(old_nodes: list, verbose=False) -> list:
+    return split_nodes_of_type(old_nodes, TextType.IMAGE, verbose)
+
+def split_nodes_link(old_nodes: list, verbose=False) -> list:
+    return split_nodes_of_type(old_nodes, TextType.LINK, verbose)
+
+def split_nodes_of_type(old_nodes: list, text_type: TextType, verbose=False) -> list:
+    if text_type in [TextType.BOLD, TextType.ITALIC, TextType.CODE]:
+        delimiters = {
+            TextType.BOLD: "**",
+            TextType.ITALIC: "_",
+            TextType.CODE: "`",
+        }
+        return split_nodes_delimiter(old_nodes, delimiters[text_type], text_type)
+    
+    if text_type not in [TextType.IMAGE, TextType.LINK]:
+        return old_nodes
+
+    # Else, splitting TextType.IMAGE or TextType.LINK
+    new_nodes = []
+    for node in old_nodes:
+        if verbose:
+            print(f"\nNode: {node}")
+        if node.text_type != TextType.PLAIN:
+            if verbose:
+                print(f"Node's text_type != TextType.PLAIN. Skipping...\n")
+            new_nodes.append(node)
+            continue
+
+        extraction_functions = {
+            TextType.IMAGE: extract_markdown_images_with_indices,
+            TextType.LINK: extract_markdown_links_with_indices,
+        }
+        
+        matches = extraction_functions[text_type](node.text)
+        if not matches:
+            if verbose:
+                print(f"No regex matches for {text_type.value} found. Skipping...\n")
+            new_nodes.append(node)
+            continue
+        
+        previous_end = 0
+        for text, url, start, end in matches:
+            leading_text = node.text[previous_end:start]
+            if leading_text:
+                text_node = TextNode(leading_text, TextType.PLAIN)
+                if verbose:
+                    print(f"Adding leading text: {text_node}")
+                new_nodes.append(text_node)
+            new_node = TextNode(text, text_type, url)
+            if verbose:
+                print(f"Adding {text_type.value}: {new_node}")
+            new_nodes.append(new_node)
+            previous_end = end
+        trailing_text = node.text[previous_end:]
+        if trailing_text:
+            text_node = TextNode(trailing_text, TextType.PLAIN)
+            if verbose:
+                print(f"Adding trailing text: {text_node}")
+            new_nodes.append(text_node)
+    return new_nodes
+
 def extract_markdown_images(text: str) -> list:
     # Takes raw markdown text and returns a list of tuples. Each tuple contains the alt text (if any) and the
     # URL of the markdown images.
@@ -66,6 +137,14 @@ def extract_markdown_images(text: str) -> list:
     # TODO: can probably improve the pattern
     return re.findall(pattern, text)
 
+def extract_markdown_images_with_indices(text: str) -> list:
+    pattern = r"!\[(.*?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    num_groups = 2
+    #  ptrn = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
+    # TODO: can probably improve the pattern
+    return extract_pattern_with_start_and_end_indices(pattern, num_groups, text)
+
+
 def extract_markdown_links(text: str) -> list:
     # Takes raw markdown text and returns a list of tuples. Each tuple contains the anchor text (required) and the
     # URL of the link.
@@ -73,8 +152,27 @@ def extract_markdown_links(text: str) -> list:
     pattern = r"(?<!!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
     #  ptrn = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
     # TODO: can probably improve the pattern
-    return re.findall(pattern, text)
-    
+    # return re.findall(pattern, text)
+    return [(grouping[0], grouping[1]) for grouping in extract_markdown_links_with_indices(text)]
+
+def extract_markdown_links_with_indices(text: str) -> list:
+    pattern = r"(?<!!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    num_groups = 2
+    #  ptrn = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
+    # TODO: can probably improve the pattern
+    return extract_pattern_with_start_and_end_indices(pattern, num_groups, text)
+
+def extract_pattern_with_start_and_end_indices(pattern: str, num_groups: int, text: str) -> list:
+    matches = re.finditer(pattern, text)
+    matches_with_indices = []
+    for match in matches:
+        grouping = []
+        for i in range(1, num_groups + 1):
+            grouping.append(match.group(i))
+        grouping.append(match.start())
+        grouping.append(match.end())
+        matches_with_indices.append(tuple(grouping))
+    return matches_with_indices
 
 def main():
     plain_node = TextNode("This is text with two `code block` words. `more code stuff`", TextType.PLAIN)
