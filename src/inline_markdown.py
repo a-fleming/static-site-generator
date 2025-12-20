@@ -174,6 +174,21 @@ def extract_pattern_with_start_and_end_indices(pattern: str, num_groups: int, te
         matches_with_indices.append(tuple(grouping))
     return matches_with_indices
 
+def text_to_text_nodes(text: str) -> list:
+    if type(text) != str:
+        raise TypeError("Text to convert to TextNodes must be a string.")
+    new_nodes = [TextNode(text, TextType.PLAIN)]
+    split_functions = [
+        split_nodes_bold,
+        split_nodes_italic,
+        split_nodes_code,
+        split_nodes_image,
+        split_nodes_link
+    ]
+    for function in split_functions:
+        new_nodes = function(new_nodes)
+    return new_nodes
+
 def main():
     plain_node = TextNode("This is text with two `code block` words. `more code stuff`", TextType.PLAIN)
     new_nodes = split_nodes_delimiter([plain_node], "`", TextType.CODE)

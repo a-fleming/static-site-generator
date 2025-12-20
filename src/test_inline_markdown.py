@@ -6,7 +6,8 @@ from inline_markdown import (
     split_nodes_delimiter,
     split_nodes_image,
     split_nodes_link,
-    text_node_to_html_node
+    text_node_to_html_node,
+    text_to_text_nodes
 )
 from textnode import TextNode, TextType
 
@@ -311,6 +312,39 @@ class TestInlineMarkdown(unittest.TestCase):
         node_list = [TextNode("`This is a code block`", TextType.CODE)]
         new_nodes = split_nodes_link(node_list)
         self.assertListEqual(new_nodes, node_list)
+
+    def test_text_to_text_nodes_all_types(self):
+        text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        new_nodes = text_to_text_nodes(text)
+        expected_nodes = [
+            TextNode("This is ", TextType.PLAIN),
+            TextNode("text", TextType.BOLD),
+            TextNode(" with an ", TextType.PLAIN),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" word and a ", TextType.PLAIN),
+            TextNode("code block", TextType.CODE),
+            TextNode(" and an ", TextType.PLAIN),
+            TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+            TextNode(" and a ", TextType.PLAIN),
+            TextNode("link", TextType.LINK, "https://boot.dev"),
+        ]
+        self.assertListEqual(new_nodes, expected_nodes)
+    
+    def test_text_to_text_nodes_no_types(self):
+        text = "This is plain text."
+        new_nodes = text_to_text_nodes(text)
+        expected_nodes = [TextNode(text, TextType.PLAIN)]
+        self.assertListEqual(new_nodes, expected_nodes)
+    
+    def test_text_to_text_nodes_empty_str(self):
+        text = ""
+        new_nodes = text_to_text_nodes(text)
+        expected_nodes = [TextNode(text, TextType.PLAIN)]
+        self.assertListEqual(new_nodes, expected_nodes)
+    
+    def test_text_to_text_nodes_non_str(self):
+        with self.assertRaises(TypeError):
+            new_nodes = text_to_text_nodes(None)
 
 
 if __name__ == "__main__":
