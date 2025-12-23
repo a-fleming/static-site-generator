@@ -92,6 +92,7 @@ def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
 
     # for each block
     for block in blocks:
+        block = remove_unnecessary_whitespace_and_newlines(block)
         if verbose:
             print(f"block: {block}")
 
@@ -99,38 +100,31 @@ def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
         block_type = block_to_block_type(block)
         if verbose:
             print(f"block_type: {block_type}")
-        if block_type not in [BlockType.PARAGRAPH, BlockType.HEADING]:
-            return None
+        
+        match block_type:
+            case BlockType.PARAGRAPH:
+                block_tag = "p"
+            case BlockType.HEADING:
+                sections = block.split(" ")
+                block_tag = f"h{sections[0].count("#")}"
+                block = " ".join(sections[1:])
+            case BlockType.QUOTE:
+                block_tag = "blockquote"
+                block = block.replace("> ", "")
+            case _:
+                raise TypeError(f"Unrecognized BlockType:'{block_type}'")
+        # if block_type not in [BlockType.PARAGRAPH, BlockType.HEADING]:
+        #     return None
         
         # --- create ParentNode for each block ---
 
-        # # convert text within block into TextNodes of correct type using text_to_text_nodes()
-        # block_text_nodes = text_to_text_nodes(block)
-        # if verbose:
-        #     print(f"block_text_nodes: {block_text_nodes}")
-
-        # # convert TextNodes to LeafNodes using text_node_to_html_node()
-        # block_html_nodes = [text_node_to_html_node(text_node) for text_node in block_text_nodes]
-        block = remove_unnecessary_whitespace_and_newlines(block)
-        if block_type == BlockType.HEADING:
-            sections = block.split(" ")
-            heading_tag = f"h{sections[0].count("#")}"
-            block = " ".join(sections[1:])
-
+        # convert text within block into corresponding HTMLNodes
         block_html_nodes = text_to_children_html_nodes(block)
         if verbose:
             print(f"block_html_nodes: {block_html_nodes}")
 
         # add LeafNodes as children of ParentNode for current block
-        block_node = None
-        match block_type:
-            case BlockType.PARAGRAPH:
-                block_node = ParentNode(tag="p", children=block_html_nodes)
-            case BlockType.HEADING:
-                # heading_tag = f"h{block.split(" ")[0].count('#')}"
-                block_node = ParentNode(tag=heading_tag, children=block_html_nodes)
-            case _:
-                raise TypeError(f"Unrecognized BlockType:'{block_type}'")
+        block_node = ParentNode(tag=block_tag, children=block_html_nodes)
         if verbose:
             print(f"block_node: {block_node}")
 
