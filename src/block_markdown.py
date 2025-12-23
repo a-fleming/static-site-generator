@@ -92,7 +92,7 @@ def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
 
     # for each block
     for block in blocks:
-        block = remove_unnecessary_whitespace_and_newlines(block)
+        # block = remove_unnecessary_whitespace_and_newlines(block)
         if verbose:
             print(f"block: {block}")
 
@@ -103,23 +103,46 @@ def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
         
         match block_type:
             case BlockType.PARAGRAPH:
+                block = remove_unnecessary_whitespace_and_newlines(block)
                 block_tag = "p"
+                block_html_nodes = text_to_children_html_nodes(block)
             case BlockType.HEADING:
+                block = remove_unnecessary_whitespace_and_newlines(block)
                 sections = block.split(" ")
                 block_tag = f"h{sections[0].count("#")}"
                 block = " ".join(sections[1:])
+                block_html_nodes = text_to_children_html_nodes(block)
             case BlockType.QUOTE:
+                block = remove_unnecessary_whitespace_and_newlines(block)
                 block_tag = "blockquote"
                 block = block.replace("> ", "")
+                block_html_nodes = text_to_children_html_nodes(block)
+            case BlockType.ULIST:
+                block_tag = "ul"
+                lines = block.split("\n")
+                # Remove leading dasha and space from each line
+                lines = [line[2:] for line in lines]
+                block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
+            case BlockType.OLIST:
+                block_tag = "ol"
+                lines = block.split("\n")
+                # Remove the leading number, decimal point, and space from each line
+                lines = [" ".join(line.split(". ")[1:]) for line in lines]
+                block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
             case _:
                 raise TypeError(f"Unrecognized BlockType:'{block_type}'")
-        # if block_type not in [BlockType.PARAGRAPH, BlockType.HEADING]:
-        #     return None
         
         # --- create ParentNode for each block ---
 
         # convert text within block into corresponding HTMLNodes
-        block_html_nodes = text_to_children_html_nodes(block)
+        # if block_type in [BlockType.ULIST, BlockType.OLIST]:
+        #     if block_type == BlockType.ULIST:
+        #         lines = block.split("- ")
+        #     else:
+
+        #     block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
+        # else:
+        #     block_html_nodes = text_to_children_html_nodes(block)
         if verbose:
             print(f"block_html_nodes: {block_html_nodes}")
 
