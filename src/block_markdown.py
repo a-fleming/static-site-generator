@@ -70,7 +70,7 @@ def markdown_to_blocks(markdown: str) -> list:
         raise TypeError("Markdown must be a string.")
     return [block.strip() for block in markdown.split("\n\n") if block != ""]
 
-def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
+def markdown_to_html_node(markdown: str, verbose=False) -> HTMLNode:
     if verbose:
         print(f"markdown:-->{markdown}")
     # create ParentNode (HTMLNode) for entire document; this ParentNode should be a single <div> element
@@ -80,15 +80,6 @@ def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
     blocks = markdown_to_blocks(markdown)
     if verbose:
         print(f"blocks: {blocks}")
-
-    # block_types_to_html_tags = {
-    #     BlockType.PARAGRAPH: "p",
-    #     BlockType.HEADING: "h",
-    #     BlockType.CODE: "code",
-    #     BlockType.QUOTE: "blockquote",
-    #     BlockType.ULIST: "ul",
-    #     BlockType.OLIST: "ol"
-    # }
 
     # for each block
     for block in blocks:
@@ -112,6 +103,20 @@ def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
                 block_tag = f"h{sections[0].count("#")}"
                 block = " ".join(sections[1:])
                 block_html_nodes = text_to_children_html_nodes(block)
+            case BlockType.CODE:
+                # need a <pre> tags to enclose the <code> tags
+                block_tag = "pre"
+                
+                # Strip leading triple backticks and newlines, and trailing backticks (not newlines) 
+                block_start_idx = 0
+                while block[block_start_idx] in "`\n":
+                    block_start_idx += 1
+                block = block[block_start_idx:-3]
+                # Leave the text within the block unconverted
+                plain_text_node = LeafNode(tag=None, value=block)
+                # Wrap the children in a <code> tag
+                block_html_nodes = [ParentNode(tag="code", children=[plain_text_node])]
+
             case BlockType.QUOTE:
                 block = remove_unnecessary_whitespace_and_newlines(block)
                 block_tag = "blockquote"
@@ -132,21 +137,10 @@ def markdown_to_html_node(markdown: str, verbose=True) -> HTMLNode:
             case _:
                 raise TypeError(f"Unrecognized BlockType:'{block_type}'")
         
-        # --- create ParentNode for each block ---
-
-        # convert text within block into corresponding HTMLNodes
-        # if block_type in [BlockType.ULIST, BlockType.OLIST]:
-        #     if block_type == BlockType.ULIST:
-        #         lines = block.split("- ")
-        #     else:
-
-        #     block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
-        # else:
-        #     block_html_nodes = text_to_children_html_nodes(block)
         if verbose:
             print(f"block_html_nodes: {block_html_nodes}")
 
-        # add LeafNodes as children of ParentNode for current block
+        # Create ParentNode for each block, and add LeafNodes as children
         block_node = ParentNode(tag=block_tag, children=block_html_nodes)
         if verbose:
             print(f"block_node: {block_node}")
