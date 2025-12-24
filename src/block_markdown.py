@@ -70,7 +70,7 @@ def markdown_to_blocks(markdown: str) -> list:
         raise TypeError("Markdown must be a string.")
     return [block.strip() for block in markdown.split("\n\n") if block != ""]
 
-def markdown_to_html_node(markdown: str, force_block_type=None, verbose=False) -> HTMLNode:
+def markdown_to_html_node(markdown: str, verbose=False) -> HTMLNode:
     if verbose:
         print(f"markdown:-->{markdown}")
     # create ParentNode (HTMLNode) for entire document; this ParentNode should be a single <div> element
@@ -84,7 +84,7 @@ def markdown_to_html_node(markdown: str, force_block_type=None, verbose=False) -
     # for each block
     for block in blocks:
         # Convert block to HTMLNode
-        block_node = block_to_html_node(block, force_block_type, verbose)
+        block_node = block_to_html_node(block, verbose)
         # Add ParentNode to children of the document node
         document_children.append(block_node)
        
@@ -95,14 +95,11 @@ def markdown_to_html_node(markdown: str, force_block_type=None, verbose=False) -
         print(f"document_node.to_html(): [starts on next line]\n{document_node.to_html()}")
     return document_node
 
-def block_to_html_node(block, force_block_type=None, verbose=False):
+def block_to_html_node(block, verbose=False):
     if verbose:
         print(f"block: {block}")
     # determine BlockType
-    if force_block_type:
-        block_type = force_block_type
-    else:
-        block_type = block_to_block_type(block)
+    block_type = block_to_block_type(block)
     if verbose:
         print(f"block_type: {block_type}")
     
