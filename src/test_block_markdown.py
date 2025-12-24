@@ -43,6 +43,11 @@ class TestBlockMarkdown(unittest.TestCase):
         block_type = block_to_block_type(block)
         self.assertEqual(block_type, BlockType.OLIST)
 
+    def test_block_to_block_type_ordered_list_double_digits(self):
+        block = "1. One\n2. Two\n3. Three\n4. Four\n5. Five\n6. Six\n7. Seven\n8. Eight\n9. Nine\n10. Ten\n11. Eleven"
+        block_type = block_to_block_type(block)
+        self.assertEqual(block_type, BlockType.OLIST)
+
     def test_block_to_block_type_malformed_heading_missing_space(self):
         block = "#This is a malformed heading."
         block_type = block_to_block_type(block)
@@ -229,6 +234,25 @@ the **same** even with inline stuff
         node = markdown_to_html_node(md)
         html = node.to_html()
         expected_html = "<div><ol><li>This is an ordered list</li><li>with <b>bold</b> items. Extra sentence</li></ol></div>"
+        self.assertEqual(html, expected_html)
+    
+    def test_markdown_to_html_node_ordered_list_block_double_digits(self):
+        md = """
+1. one
+2. two
+3. three
+4. four
+5. five
+6. six
+7. seven
+8. eight
+9. nine
+10. ten
+11. eleven
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        expected_html = "<div><ol><li>one</li><li>two</li><li>three</li><li>four</li><li>five</li><li>six</li><li>seven</li><li>eight</li><li>nine</li><li>ten</li><li>eleven</li></ol></div>"
         self.assertEqual(html, expected_html)
 
 

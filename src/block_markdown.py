@@ -61,7 +61,7 @@ def is_unordered_list_block(block_list: list) -> bool:
 
 def is_ordered_list_block(block_list: list) -> bool:
     for number, line in enumerate(block_list, start=1):
-        if len(line) < 3 or line[:3] != f"{number}. ":
+        if not line.startswith(f"{number}. "):
             return False
     return True
 
