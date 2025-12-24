@@ -224,11 +224,11 @@ the **same** even with inline stuff
     def test_markdown_to_html_node_ordered_list_block(self):
         md = """
 1. This is an ordered list
-2. with **bold** items
+2. with **bold** items. Extra sentence
 """
         node = markdown_to_html_node(md)
         html = node.to_html()
-        expected_html = "<div><ol><li>This is an ordered list</li><li>with <b>bold</b> items</li></ol></div>"
+        expected_html = "<div><ol><li>This is an ordered list</li><li>with <b>bold</b> items. Extra sentence</li></ol></div>"
         self.assertEqual(html, expected_html)
 
 

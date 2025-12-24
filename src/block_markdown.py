@@ -70,7 +70,7 @@ def markdown_to_blocks(markdown: str) -> list:
         raise TypeError("Markdown must be a string.")
     return [block.strip() for block in markdown.split("\n\n") if block != ""]
 
-def markdown_to_html_node(markdown: str, verbose=False) -> HTMLNode:
+def markdown_to_html_node(markdown: str, force_block_type=None, verbose=False) -> HTMLNode:
     if verbose:
         print(f"markdown:-->{markdown}")
     # create ParentNode (HTMLNode) for entire document; this ParentNode should be a single <div> element
@@ -83,71 +83,11 @@ def markdown_to_html_node(markdown: str, verbose=False) -> HTMLNode:
 
     # for each block
     for block in blocks:
-        # block = remove_unnecessary_whitespace_and_newlines(block)
-        if verbose:
-            print(f"block: {block}")
-
-        # determine BlockType
-        block_type = block_to_block_type(block)
-        if verbose:
-            print(f"block_type: {block_type}")
-        
-        match block_type:
-            case BlockType.PARAGRAPH:
-                block = remove_unnecessary_whitespace_and_newlines(block)
-                block_tag = "p"
-                block_html_nodes = text_to_children_html_nodes(block)
-            case BlockType.HEADING:
-                block = remove_unnecessary_whitespace_and_newlines(block)
-                sections = block.split(" ")
-                block_tag = f"h{sections[0].count("#")}"
-                block = " ".join(sections[1:])
-                block_html_nodes = text_to_children_html_nodes(block)
-            case BlockType.CODE:
-                # need a <pre> tags to enclose the <code> tags
-                block_tag = "pre"
-                
-                # Strip leading triple backticks and newlines, and trailing backticks (not newlines) 
-                block_start_idx = 0
-                while block[block_start_idx] in "`\n":
-                    block_start_idx += 1
-                block = block[block_start_idx:-3]
-                # Leave the text within the block unconverted
-                plain_text_node = LeafNode(tag=None, value=block)
-                # Wrap the children in a <code> tag
-                block_html_nodes = [ParentNode(tag="code", children=[plain_text_node])]
-
-            case BlockType.QUOTE:
-                block = remove_unnecessary_whitespace_and_newlines(block)
-                block_tag = "blockquote"
-                block = block.replace("> ", "")
-                block_html_nodes = text_to_children_html_nodes(block)
-            case BlockType.ULIST:
-                block_tag = "ul"
-                lines = block.split("\n")
-                # Remove leading dasha and space from each line
-                lines = [line[2:] for line in lines]
-                block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
-            case BlockType.OLIST:
-                block_tag = "ol"
-                lines = block.split("\n")
-                # Remove the leading number, decimal point, and space from each line
-                lines = [" ".join(line.split(". ")[1:]) for line in lines]
-                block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
-            case _:
-                raise TypeError(f"Unrecognized BlockType:'{block_type}'")
-        
-        if verbose:
-            print(f"block_html_nodes: {block_html_nodes}")
-
-        # Create ParentNode for each block, and add LeafNodes as children
-        block_node = ParentNode(tag=block_tag, children=block_html_nodes)
-        if verbose:
-            print(f"block_node: {block_node}")
-
-        # add ParentNode to children of the document node
+        # Convert block to HTMLNode
+        block_node = block_to_html_node(block, force_block_type, verbose)
+        # Add ParentNode to children of the document node
         document_children.append(block_node)
-    
+       
     document_node = ParentNode(tag="div", children=document_children)
     if verbose:
         print(f"document_children: {document_children}")
@@ -155,12 +95,91 @@ def markdown_to_html_node(markdown: str, verbose=False) -> HTMLNode:
         print(f"document_node.to_html(): [starts on next line]\n{document_node.to_html()}")
     return document_node
 
+def block_to_html_node(block, force_block_type=None, verbose=False):
+    if verbose:
+        print(f"block: {block}")
+    # determine BlockType
+    if force_block_type:
+        block_type = force_block_type
+    else:
+        block_type = block_to_block_type(block)
+    if verbose:
+        print(f"block_type: {block_type}")
+    
+    match block_type:
+        case BlockType.PARAGRAPH:
+            block_node = paragraph_to_html_node(block)
+        case BlockType.HEADING:
+            block_node = heading_to_html_node(block)
+        case BlockType.CODE:
+            block_node = code_to_html_node(block)
+        case BlockType.QUOTE:
+            block_node = quote_to_html_node(block)
+        case BlockType.ULIST:
+            block_node = ulist_to_html_node(block)
+        case BlockType.OLIST:
+            block_node = olist_to_html_node(block)
+        case _:
+            raise TypeError(f"Unrecognized BlockType:'{block_type}'")
+    if verbose:
+        print(f"block_node: {block_node}")
+    return block_node
+
+def paragraph_to_html_node(block: str) -> HTMLNode:
+    block = remove_unnecessary_whitespace_and_newlines(block)
+    block_tag = "p"
+    block_html_nodes = text_to_children_html_nodes(block)
+    return ParentNode(tag=block_tag, children=block_html_nodes)
+
+def heading_to_html_node(block: str) -> HTMLNode:
+    block = remove_unnecessary_whitespace_and_newlines(block)
+    sections = block.split(" ")
+    # Determine heading level
+    block_tag = f"h{sections[0].count("#")}"
+    # Remove leading "#"s and single space
+    block = " ".join(sections[1:])
+    block_html_nodes = text_to_children_html_nodes(block)
+    return ParentNode(tag=block_tag, children=block_html_nodes)
+
+def code_to_html_node(block: str) -> HTMLNode:
+    # Strip leading triple backticks and newlines, and trailing backticks (not newlines) 
+    block = block[4:-3]
+    # Leave the text within the block unconverted
+    plain_text_node = LeafNode(tag=None, value=block)
+    # Wrap the text in a <code> tag
+    code_node = ParentNode(tag="code", children=[plain_text_node])
+    # Wrap the <code> element with <pre> tags
+    return ParentNode(tag="pre", children=[code_node])
+
+def quote_to_html_node(block: str) -> HTMLNode:
+    block = remove_unnecessary_whitespace_and_newlines(block)
+    block = block.replace("> ", "")
+    block_html_nodes = text_to_children_html_nodes(block)
+    return ParentNode(tag="blockquote", children=block_html_nodes)
+
+def ulist_to_html_node(block: str) -> HTMLNode:
+    lines = block.split("\n")
+    # Remove leading "- " each line
+    lines = [line[2:] for line in lines]
+    # Wrap each line in an <li> tag
+    block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
+    # Wrap entire block in a <ul> tag
+    return ParentNode(tag="ul", children=block_html_nodes)
+
+def olist_to_html_node(block: str) -> HTMLNode:
+    lines = block.split("\n")
+    # Remove the leading number, decimal point, and space from each line
+    lines = [". ".join(line.split(". ")[1:]) for line in lines]
+    # Wrap each line in an <li> tag
+    block_html_nodes = [ParentNode(tag="li", children=text_to_children_html_nodes(line)) for line in lines]
+    # Wrap entire block in an <ol> tag
+    return ParentNode(tag="ol", children=block_html_nodes)
+
 def text_to_children_html_nodes(block: str, verbose=False) -> list:
     # convert text within block into TextNodes of correct type using text_to_text_nodes()
     block_text_nodes = text_to_text_nodes(block)
     if verbose:
         print(f"block_text_nodes: {block_text_nodes}")
-
     # convert TextNodes to LeafNodes using text_node_to_html_node()
     block_html_nodes = [text_node_to_html_node(text_node) for text_node in block_text_nodes]
     return block_html_nodes
