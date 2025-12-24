@@ -65,5 +65,12 @@ def remove_directory_contents(directory: str | Path, verbose: bool=False) -> boo
         return False
     return True
 
+def extract_title(markdown: str):
+    sections = markdown.split("\n\n")
+    for section in sections:
+        if section.startswith("# "):
+            return section[2:]
+    raise ValueError("Markdown does not contain a header.")
+
 if __name__ == "__main__":
     main()
