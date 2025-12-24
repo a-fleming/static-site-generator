@@ -5,9 +5,37 @@ from pathlib import Path
 from textnode import TextNode, TextType
 
 def main():
-    dest = input("Path to dest: ")
-    remove_directory_contents(dest, verbose=True)
+    src = "static"
+    dest = "public"
+    copy_directory_contents(src, dest, remove_dest=True, verbose=True)
+
+def copy_directory_contents(src: str | Path, dest: str | Path, remove_dest: bool=True, verbose: bool = False) -> bool:
+    if verbose:
+        print(f"Copying contents of '{src}' to '{dest}'")
+
+    if not isinstance(src, (str, Path)):
+        if verbose:
+            print(f"src must be a string or Path object.")
+        return False
+    src_path = Path(src)
+    if not isinstance(dest, (str, Path)):
+        if verbose:
+            print(f"dest must be a string or Path object.")
+        return False
+    dest_path = Path(dest)
+
+    if remove_dest and not remove_directory_contents(dest_path, verbose):
+        return False
     
+    for dir_or_file in src_path.iterdir():
+        new_path = dest_path / dir_or_file.name
+        if dir_or_file.is_dir():
+            new_path.mkdir()
+            copy_directory_contents(dir_or_file, new_path, False, verbose)
+        elif shutil.copy(dir_or_file, dest_path) and verbose:
+                print(f"Copied file '{dir_or_file}' to '{new_path}'")
+    return True
+
 def remove_directory_contents(directory: str | Path, verbose: bool=False) -> bool:
     if not isinstance(directory, (str, Path)):
         if verbose:
@@ -17,21 +45,21 @@ def remove_directory_contents(directory: str | Path, verbose: bool=False) -> boo
     if path.exists():
         if not path.is_dir():
             if verbose:
-                print(f"'{path}' is not a directory.")
+                print(f"Directory not found at '{path}'.")
             return False
         try:
             shutil.rmtree(path)
             if verbose:
-                print(f"'{path}' and contents successfully removed.")
+                print(f"Directory '{path}' and contents successfully removed.")
         except Exception as e:
             print(f"Error removing '{path}': {e}")
             return False
     elif verbose:
-        print(f"'{path}' does not exist.")
+        print(f"Directory '{path}' does not exist.")
     try:
         path.mkdir(parents=True, exist_ok=True)
         if verbose:
-            print(f"'{path}' successfully recreated. ")
+            print(f"Directory '{path}' successfully recreated. ")
     except Exception as e:
         print(f"Error recreating '{path}': {e}")
         return False

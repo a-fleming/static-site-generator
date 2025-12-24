@@ -1,3 +1,11 @@
 .github/
 
 __pycache__/
+
+# Dynamically generated files
+public/
+
+# Files for local testing
+src_dir/
+dest_dir/
+populate_src_dir.sh
