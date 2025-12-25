@@ -1,8 +1,8 @@
 import unittest
 
-from main import extract_title
+from generate_content import extract_title
 
-class TestMain(unittest.TestCase):
+class TestGenerateContent(unittest.TestCase):
     def test_extract_title(self):
         md = "# This is a header"
         title = extract_title(md)
@@ -39,6 +39,17 @@ That comes after
 
     def test_extract_title_none(self):
         md = "No title here"
+        with self.assertRaises(ValueError):
+            title = extract_title(md)
+    
+    def test_extract_title_empty_heading(self):
+        md = "# "
+        title = extract_title(md)
+        expected = ""
+        self.assertEqual(title, expected)
+    
+    def test_extract_title_empty_str(self):
+        md = ""
         with self.assertRaises(ValueError):
             title = extract_title(md)
 
