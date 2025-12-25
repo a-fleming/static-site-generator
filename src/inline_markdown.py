@@ -132,15 +132,17 @@ def extract_markdown_images(text: str) -> list:
     # Takes raw markdown text and returns a list of tuples. Each tuple contains the alt text (if any) and the
     # URL of the markdown images.
     # pattern matches ![alt text](https://www.example.com/path/to/1/image.png)
-    pattern = r"!\[(.*?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
-    #  ptrn = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
+    # pattern = r"!\[(.*?)\]\((https?:\/\/\w(?:.\w+).*?)\)" # old pattern (doesn't match relative web pages)
+    pattern = r"!\[([^\[\]]*)\]\(([^\(\)]+)\)" # modified boot.dev's example pattern
+    # pttrn = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
     # TODO: can probably improve the pattern
     return re.findall(pattern, text)
 
 def extract_markdown_images_with_indices(text: str) -> list:
-    pattern = r"!\[(.*?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    # pattern = r"!\[(.*?)\]\((https?:\/\/\w(?:.\w+).*?)\)" # old pattern (doesn't match relative web pages)
     num_groups = 2
-    #  ptrn = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
+    pattern = r"!\[([^\[\]]*)\]\(([^\(\)]+)\)" # modified boot.dev's example pattern
+    # pttrn = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
     # TODO: can probably improve the pattern
     return extract_pattern_with_start_and_end_indices(pattern, num_groups, text)
 
@@ -149,15 +151,17 @@ def extract_markdown_links(text: str) -> list:
     # Takes raw markdown text and returns a list of tuples. Each tuple contains the anchor text (required) and the
     # URL of the link.
     # pattern matches [anchor text](https://www.example.com/path/to/1/page.html)
-    pattern = r"(?<!!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    # pattern = r"(?<!!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)" # old pattern (doesn't match relative web pages)
+    pattern = r"(?<!!)\[([^\[\]]+)\]\(([^\(\)]*)\)" # modified boot.dev's example pattern
     #  ptrn = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
     # TODO: can probably improve the pattern
     # return re.findall(pattern, text)
     return [(grouping[0], grouping[1]) for grouping in extract_markdown_links_with_indices(text)]
 
 def extract_markdown_links_with_indices(text: str) -> list:
-    pattern = r"(?<!!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)"
+    # pattern = r"(?<!!)\[(.+?)\]\((https?:\/\/\w(?:.\w+).*?)\)" # old pattern (doesn't match relative web pages)
     num_groups = 2
+    pattern = r"(?<!!)\[([^\[\]]+)\]\(([^\(\)]*)\)" # modified boot.dev's example pattern
     #  ptrn = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)" # boot.dev's example pattern
     # TODO: can probably improve the pattern
     return extract_pattern_with_start_and_end_indices(pattern, num_groups, text)
