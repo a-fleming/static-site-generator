@@ -49,7 +49,8 @@ def is_heading_block(block_list: list) -> bool:
 
 def is_quote_block(block_list: list) -> bool:
     for line in block_list:
-        if len(line) < 2 or line[:2] != "> ":
+        if not line.startswith(">"):
+        # if len(line) < 2 or line[:2] != "> ":
             return False
     return True
 

@@ -33,6 +33,11 @@ class TestBlockMarkdown(unittest.TestCase):
         block_type = block_to_block_type(block)
         self.assertEqual(block_type, BlockType.QUOTE)
 
+    def test_block_to_block_type_quote_missing_space(self):
+        block = "> This is\n>still a good\n> quote block"
+        block_type = block_to_block_type(block)
+        self.assertEqual(block_type, BlockType.QUOTE)
+
     def test_block_to_block_type_unordered_list(self):
         block = "- This is an\n- unordered list\n- with items"
         block_type = block_to_block_type(block)
@@ -65,11 +70,6 @@ class TestBlockMarkdown(unittest.TestCase):
 
     def test_block_to_block_type_malformed_code_bad_end(self):
         block = "``This is a\ncode block\nwith code`"
-        block_type = block_to_block_type(block)
-        self.assertEqual(block_type, BlockType.PARAGRAPH)
-
-    def test_block_to_block_type_malformed_quote_missing_space(self):
-        block = "> This is a\n>malformed\n- quote block"
         block_type = block_to_block_type(block)
         self.assertEqual(block_type, BlockType.PARAGRAPH)
 
