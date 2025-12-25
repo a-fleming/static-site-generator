@@ -9,7 +9,7 @@ from block_markdown import (
 
 class TestBlockMarkdown(unittest.TestCase):
     def test_block_to_block_type_paragraph(self):
-        block = "This is a \bparagraph block\nwith some text."
+        block = "This is a \nparagraph block\nwith some text."
         block_type = block_to_block_type(block)
         self.assertEqual(block_type, BlockType.PARAGRAPH)
 
