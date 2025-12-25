@@ -13,8 +13,10 @@ def main():
     from_path = "content/index.md"
     template_path = "template.html"
     dest_path = "public/index.html"
-    generate_page(from_path, template_path, dest_path)
-
+    if generate_page(from_path, template_path, dest_path, verbose=True):
+        print("Successfully generated page from '{from_path}' to '{dest_path}' using '{template_path}'")
+    else:
+        print("Failed to generate page from '{from_path}' to '{dest_path}' using '{template_path}'")
 
 def copy_directory_contents(src: str | Path, dest: str | Path, remove_dest: bool=True, verbose: bool = False) -> bool:
     if verbose:
@@ -79,14 +81,24 @@ def extract_title(markdown: str):
             return section[2:]
     raise ValueError("Markdown does not contain a header.")
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path: str | Path, template_path:str | Path, dest_path: str | Path, verbose: bool=False) -> bool:
     print(f"Generating page from '{from_path}' to '{dest_path}' using '{template_path}'")
 
-    with open(from_path, 'r') as from_file:
-        from_content = from_file.read()
+    try:
+        with open(from_path, 'r') as from_file:
+            from_content = from_file.read()
+    except FileNotFoundError as fnfe:
+        if verbose:
+            print(f"Source file '{from_path}' not found.")
+        return False
     
-    with open(template_path, 'r') as template_file:
-        template_content = template_file.read()
+    try:
+        with open(template_path, 'r') as template_file:
+            template_content = template_file.read()
+    except FileNotFoundError as fnfe:
+        if verbose:
+            print(f"Template file '{template_path}' not found.")
+        return False
     
     html = markdown_to_html_node(from_content, verbose=True).to_html()
     title = extract_title(from_content)
@@ -94,8 +106,14 @@ def generate_page(from_path, template_path, dest_path):
     template_content = template_content.replace("{{ Title }}", title)
     template_content = template_content.replace("{{ Content }}", html)
 
-    with open(dest_path, 'w') as dest_file:
-        dest_file.write(template_content)
+    try:
+        with open(dest_path, 'w') as dest_file:
+            dest_file.write(template_content)
+    except Exception as e:
+        if verbose:
+            print(f"Error writing to '{dest_path}': {e}")
+        return False
+    return True
 
 
 if __name__ == "__main__":
