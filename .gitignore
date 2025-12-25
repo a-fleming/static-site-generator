@@ -2,9 +2,6 @@
 
 __pycache__/
 
-# Dynamically generated files
-public/
-
 # Files for local testing
 src_dir/
 dest_dir/
