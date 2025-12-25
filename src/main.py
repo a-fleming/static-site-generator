@@ -2,12 +2,19 @@ import shutil
 
 from pathlib import Path
 
+from block_markdown import markdown_to_html_node
 from textnode import TextNode, TextType
 
 def main():
-    src = "static"
-    dest = "public"
-    copy_directory_contents(src, dest, remove_dest=True, verbose=True)
+    src_dir = "static"
+    dest_dir = "public"
+    copy_directory_contents(src_dir, dest_dir, remove_dest=True, verbose=True)
+    
+    from_path = "content/index.md"
+    template_path = "template.html"
+    dest_path = "public/index.html"
+    generate_page(from_path, template_path, dest_path)
+
 
 def copy_directory_contents(src: str | Path, dest: str | Path, remove_dest: bool=True, verbose: bool = False) -> bool:
     if verbose:
@@ -71,6 +78,25 @@ def extract_title(markdown: str):
         if section.startswith("# "):
             return section[2:]
     raise ValueError("Markdown does not contain a header.")
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from '{from_path}' to '{dest_path}' using '{template_path}'")
+
+    with open(from_path, 'r') as from_file:
+        from_content = from_file.read()
+    
+    with open(template_path, 'r') as template_file:
+        template_content = template_file.read()
+    
+    html = markdown_to_html_node(from_content, verbose=True).to_html()
+    title = extract_title(from_content)
+
+    template_content = template_content.replace("{{ Title }}", title)
+    template_content = template_content.replace("{{ Content }}", html)
+
+    with open(dest_path, 'w') as dest_file:
+        dest_file.write(template_content)
+
 
 if __name__ == "__main__":
     main()
